@@ -8,29 +8,46 @@ module Api
     class ProductsController < ApplicationController
       # GET /api/v1/products
       def index
-        # BUG 2.1: This will cause an N+1 query problem.
-        # For each product, a separate query will be made to fetch its category.
-        # Also, if a product's category_id points to a non-existent category,
-        # category_name will be nil, which is also part of the bug description.
-        # @products = Product.all
-        @products = Product.includes(:category).all
-
-        # Simplified JSON rendering for illustration.
-        # In a real app, you'd typically use serializers (e.g., Active Model Serializers, jbuilder).
-        render json: @products.map { |product|
-          {
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            price: product.price,
-            stock_quantity: product.stock_quantity,
-            category_id: product.category_id,
-            category_name: product.category_name, # This call triggers the N+1 query
-            published_at: product.published_at,
-            is_featured: product.is_featured,
-            is_admin: product.is_admin # Exposing this for the mass assignment demo
+        @products = Product.includes(:category)
+        
+        if params[:category_id].present?
+          @products = @products.where(category_id: params[:category_id])
+        end
+        
+        # Pagination using Kaminari
+        page = params[:page].present? ? params[:page].to_i : 1
+        per_page = params[:per_page].present? ? params[:per_page].to_i : 10
+        
+        # Add limits for per_page
+        per_page = [[per_page, 1].max, 100].min
+        
+        @products = @products.page(page).per(per_page)
+        response_data = {
+          products: @products.map { |product|
+            {
+              id: product.id,
+              name: product.name,
+              description: product.description,
+              price: product.price,
+              stock_quantity: product.stock_quantity,
+              category_id: product.category_id,
+              category_name: product.category_name,
+              published_at: product.published_at,
+              is_featured: product.is_featured,
+              is_admin: product.is_admin
+            }
+          },
+          pagination: {
+            current_page: @products.current_page,
+            per_page: @products.limit_value,
+            total_pages: @products.total_pages,
+            total_count: @products.total_count,
+            has_next_page: @products.current_page < @products.total_pages,
+            has_prev_page: @products.current_page > 1
           }
         }
+        
+        render json: response_data
       end
 
       # GET /api/v1/products/:id
