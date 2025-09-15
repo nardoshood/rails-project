@@ -11,6 +11,8 @@ gem "sqlite3", "~> 1.4"
 gem "puma", "~> 5.0"
 # Build JSON APIs with ease
 gem "jbuilder"
+# Use for N+1 queries
+gem 'bullet', group: 'development'
 # Use Redis adapter to run Action Cable in production
 # gem "redis", "~> 4.0"
 # Use Active Model has_secure_password
@@ -22,8 +24,8 @@ gem "jbuilder"
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
-# For caching (Task 2.3 requirement)
-gem "actionpack-action_caching"
+# For caching (Task 2.3 requirement) - Using Rails built-in caching instead
+# gem "actionpack-action_caching" # Removed - not compatible with Rails 7
 
 # For pagination (Task 3.1 requirement)
 gem "kaminari"

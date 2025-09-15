@@ -19,7 +19,8 @@ echo "Running database migrations..."
 rails db:migrate
 
 # Seed the database if it's empty
-if [ "$(rails runner "puts Product.count")" -eq "0" ]; then
+product_count=$(rails runner "puts Product.count" 2>/dev/null)
+if [ "$product_count" = "0" ]; then
   echo "Seeding database..."
   rails db:seed
 fi
