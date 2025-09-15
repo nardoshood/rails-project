@@ -57,10 +57,7 @@ module Api
 
       # POST /api/v1/products
       def create
-        # BUG 2.2: Mass assignment vulnerability.
-        # This allows any attribute in the `product` hash to be set,
-        # including potentially malicious or unintended ones (e.g., `is_admin`).
-        @product = Product.new(params[:product]) # DIRECT ASSIGNMENT FROM PARAMS
+        @product = Product.new(product_params) # USING STRONG PARAMETERS
 
         if @product.save
           render json: @product, status: :created
@@ -72,10 +69,7 @@ module Api
       # PATCH/PUT /api/v1/products/:id
       def update
         @product = Product.find(params[:id])
-        # BUG 2.2: Mass assignment vulnerability.
-        # This allows any attribute in the `product` hash to be set,
-        # including potentially malicious or unintended ones.
-        if @product.update(params.permit!) # USING permit! which is unsafe
+        if @product.update(product_params) # USING STRONG PARAMETERS
           # BUG 2.3 (Part 2): Cache invalidation missing.
           # The `show` action's cache is not explicitly expired here by default.
           # You would add `expire_action action: :show, id: @product.id` as a fix.
@@ -105,11 +99,12 @@ module Api
         end
       end
 
-      # Private method for strong parameters (this would be the fix for Bug 2.2)
-      # private
-      # def product_params
-      #   params.require(:product).permit(:name, :description, :price, :stock_quantity, :category_id, :published_at, :is_featured)
-      # end
+      private
+
+      def product_params
+        params.require(:product).permit(:name, :description, :price, :stock_quantity, :category_id, :published_at, :is_featured)
+        # Note: :is_admin is intentionally excluded to prevent privilege escalation
+      end
     end
   end
 end 

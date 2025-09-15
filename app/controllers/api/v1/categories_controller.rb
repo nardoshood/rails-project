@@ -41,8 +41,7 @@ module Api
 
       # POST /api/v1/categories
       def create
-        # BUG: Mass assignment vulnerability - no strong parameters
-        @category = Category.new(params[:category])
+        @category = Category.new(category_params)
         
         if @category.save
           render json: @category, status: :created
@@ -55,8 +54,7 @@ module Api
       def update
         @category = Category.find(params[:id])
         
-        # BUG: Mass assignment vulnerability - using permit!
-        if @category.update(params.permit!)
+        if @category.update(category_params)
           render json: @category
         else
           render json: @category.errors, status: :unprocessable_entity
@@ -73,11 +71,11 @@ module Api
         head :no_content
       end
 
-      # Private method for strong parameters (this would be the fix)
-      # private
-      # def category_params
-      #   params.require(:category).permit(:name)
-      # end
+      private
+
+      def category_params
+        params.require(:category).permit(:name)
+      end
     end
   end
 end 
