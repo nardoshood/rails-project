@@ -6,11 +6,6 @@
 module Api
   module V1
     class ProductsController < ApplicationController
-      # BUG 2.3 (Part 1): Basic action caching without proper invalidation.
-      # This cache will not be automatically busted when a product is updated.
-      # Requires `gem 'actionpack-action_caching'` to be installed and configured.
-      # caches_action :show, expires_in: 5.minutes # Commented out - requires actionpack-action_caching gem which is not Rails 7 compatible
-
       # GET /api/v1/products
       def index
         # BUG 2.1: This will cause an N+1 query problem.
@@ -41,18 +36,23 @@ module Api
       # GET /api/v1/products/:id
       def show
         @product = Product.find(params[:id])
-        render json: {
-          id: @product.id,
-          name: @product.name,
-          description: @product.description,
-          price: @product.price,
-          stock_quantity: @product.stock_quantity,
-          category_id: @product.category_id,
-          category_name: @product.category_name,
-          published_at: @product.published_at,
-          is_featured: @product.is_featured,
-          is_admin: @product.is_admin
-        }
+        
+        cached_product = Rails.cache.fetch("product_#{@product.id}", expires_in: 5.minutes) do
+          {
+            id: @product.id,
+            name: @product.name,
+            description: @product.description,
+            price: @product.price,
+            stock_quantity: @product.stock_quantity,
+            category_id: @product.category_id,
+            category_name: @product.category_name,
+            published_at: @product.published_at,
+            is_featured: @product.is_featured,
+            is_admin: @product.is_admin
+          }
+        end
+        
+        render json: cached_product
       end
 
       # POST /api/v1/products
@@ -70,9 +70,7 @@ module Api
       def update
         @product = Product.find(params[:id])
         if @product.update(product_params) # USING STRONG PARAMETERS
-          # BUG 2.3 (Part 2): Cache invalidation missing.
-          # The `show` action's cache is not explicitly expired here by default.
-          # You would add `expire_action action: :show, id: @product.id` as a fix.
+          Rails.cache.delete("product_#{@product.id}")
           render json: @product
         else
           render json: @product.errors, status: :unprocessable_entity
@@ -82,6 +80,7 @@ module Api
       # DELETE /api/v1/products/:id
       def destroy
         @product = Product.find(params[:id])
+        Rails.cache.delete("product_#{@product.id}")
         @product.destroy
         head :no_content
       end
@@ -90,9 +89,7 @@ module Api
       def feature
         @product = Product.find(params[:id])
         if @product.update(is_featured: true)
-          # BUG 2.3 (Part 3): Cache invalidation missing for custom actions as well.
-          # The `show` action's cache is not explicitly expired here by default.
-          # You would add `expire_action action: :show, id: @product.id` as a fix.
+          Rails.cache.delete("product_#{@product.id}")
           render json: @product
         else
           render json: @product.errors, status: :unprocessable_entity
