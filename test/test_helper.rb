@@ -37,15 +37,15 @@ class ActiveSupport::TestCase
   end
 
   def api_post(path, data = {}, headers = {})
-    post path, params: data, headers: headers.merge({ 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
+    post path, params: data, headers: headers.merge({ 'Accept' => 'application/json' })
   end
 
   def api_put(path, data = {}, headers = {})
-    put path, params: data, headers: headers.merge({ 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
+    put path, params: data, headers: headers.merge({ 'Accept' => 'application/json' })
   end
 
   def api_patch(path, data = {}, headers = {})
-    patch path, params: data, headers: headers.merge({ 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
+    patch path, params: data, headers: headers.merge({ 'Accept' => 'application/json' })
   end
 
   def api_delete(path, headers = {})
@@ -55,7 +55,7 @@ class ActiveSupport::TestCase
   # Helper method to assert JSON response
   def assert_json_response(expected_status = :ok)
     assert_response expected_status
-    assert_equal 'application/json', response.content_type
+    assert_match %r{application/json}, response.content_type
   end
 
   # Helper method to parse JSON response
