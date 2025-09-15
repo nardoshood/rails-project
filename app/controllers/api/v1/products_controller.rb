@@ -9,7 +9,7 @@ module Api
       # BUG 2.3 (Part 1): Basic action caching without proper invalidation.
       # This cache will not be automatically busted when a product is updated.
       # Requires `gem 'actionpack-action_caching'` to be installed and configured.
-      caches_action :show, expires_in: 5.minutes
+      # caches_action :show, expires_in: 5.minutes # Commented out - requires actionpack-action_caching gem which is not Rails 7 compatible
 
       # GET /api/v1/products
       def index
@@ -17,7 +17,8 @@ module Api
         # For each product, a separate query will be made to fetch its category.
         # Also, if a product's category_id points to a non-existent category,
         # category_name will be nil, which is also part of the bug description.
-        @products = Product.all
+        # @products = Product.all
+        @products = Product.includes(:category).all
 
         # Simplified JSON rendering for illustration.
         # In a real app, you'd typically use serializers (e.g., Active Model Serializers, jbuilder).
